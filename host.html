@@ -2,169 +2,181 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>Impostor Game - Host Screen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Who is Impostor? - Host Screen</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 40px; }
-        .timer { font-size: 72px; color: #f1c40f; margin: 10px 0; font-weight: bold; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
-        .card { background: #16213e; padding: 20px; border-radius: 12px; border: 2px solid #0f3460; transition: all 0.3s ease; }
-        .word { font-size: 24px; color: #4ecca3; font-weight: bold; margin-top: 10px; }
-        
-        /* สไตล์พิเศษสำหรับย้ำตัว Impostor ตอนเฉลย */
-        .card.impostor-card { background: #900c3f; border: 4px solid #ff5733; transform: scale(1.05); }
-        .impostor-badge { background: #ff5733; color: white; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight: bold; display: inline-block; margin-top: 5px; }
-
-        .btn-group { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
-        .btn { border: none; padding: 12px 24px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
-        .start-btn { background: #2ecc71; color: white; }
-        .start-btn:hover { background: #27ae60; }
-        .reveal-btn { background: #f39c12; color: white; }
-        .reveal-btn:hover { background: #d35400; }
-        .reset-btn { background: #e74c3c; color: white; }
-        .reset-btn:hover { background: #c0392b; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 30px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .container { width: 100%; max-width: 900px; text-align: center; }
+        h1 { color: #38bdf8; margin-bottom: 10px; }
+        .card { background: #1e293b; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 25px; border: 1px solid #334155; }
+        .category-select { font-size: 18px; padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #475569; width: 60%; margin-bottom: 15px; }
+        .btn { border: none; padding: 12px 24px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 5px; transition: all 0.2s; }
+        .btn-start { background: #22c55e; color: white; }
+        .btn-reveal { background: #eab308; color: black; }
+        .btn-reset { background: #ef4444; color: white; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; text-align: left; }
+        .player-card { background: #334155; padding: 15px; border-radius: 12px; border-left: 5px solid #94a3b8; }
+        .player-card.impostor { border-left-color: #ef4444; background: #451a03; }
+        .player-card.civilian { border-left-color: #22c55e; }
+        .p-name { font-size: 20px; font-weight: bold; color: #f8fafc; }
+        .p-role { font-size: 14px; margin-top: 5px; }
+        .p-answer { margin-top: 10px; background: #0f172a; padding: 8px; border-radius: 6px; font-size: 15px; color: #e2e8f0; }
+        .secret-info { background: #0284c7; padding: 15px; border-radius: 10px; margin-top: 15px; font-size: 20px; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <h1>Who is the Impostor?</h1>
-    <p>หมวดหมู่: <b style="color: #f1c40f;">Food & Drink Categories (Auto-Swap + Reveal)</b></p>
-    <div class="timer" id="timer">20</div>
-    
-    <div class="btn-group">
-        <button class="btn start-btn" onclick="assignRolesAndStart()">🎲 สุ่มบทบาท & เริ่มเวลา</button>
-        <button class="btn reveal-btn" onclick="revealImpostor()">👁️ เฉลย Impostor</button>
-        <button class="btn reset-btn" onclick="resetGame()">🔄 เริ่มรอบใหม่ / รีเซ็ต</button>
-    </div>
-    
-    <div class="grid" id="answers-container"></div>
+    <div class="container">
+        <h1>🎮 Host Dashboard (ผู้ดำเนินเกม)</h1>
+        
+        <div class="card">
+            <label for="catSelect"><b>เลือกหมวดหมู่คำศัพท์:</b></label><br>
+            <select id="catSelect" class="category-select">
+                <option value="animals">🐾 สัตว์เลี้ยง / สัตว์ป่า</option>
+                <option value="food">🍕 อาหาร / เครื่องดื่ม</option>
+                <option value="places">🏫 สถานที่</option>
+            </select>
+            <br>
+            <button class="btn btn-start" onclick="startGame()">▶️ สุ่มบทบาท & เริ่มเกม</button>
+            <button class="btn btn-reveal" onclick="revealGame()">🎉 เฉลยผล</button>
+            <button class="btn btn-reset" onclick="resetGame()">🔄 รีเซ็ตเกมทั้งหมด</button>
+            
+            <div id="secretBox" class="secret-info" style="display:none;"></div>
+        </div>
 
-    <!-- Firebase Scripts -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+        <div class="card">
+            <h2>👥 รายชื่อผู้เล่น (<span id="playerCount">0</span> คน)</h2>
+            <div id="playersGrid" class="grid">
+                <div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม...</div>
+            </div>
+        </div>
+    </div>
 
     <script>
         const firebaseConfig = {
-            apiKey: "AIzaSyBO1K6Zc_B2d-NYs56M5SaV8538tpvDJNA",
-            authDomain: "imposter-game-f07f2.firebaseapp.com",
-            databaseURL: "https://imposter-game-f07f2-default-rtdb.firebaseio.com",
-            projectId: "imposter-game-f07f2",
-            storageBucket: "imposter-game-f07f2.firebasestorage.app",
-            messagingSenderId: "313788342489",
-            appId: "1:313788342489:web:587a03eea181cf929a5ec8"
+            databaseURL: "https://imposter-game-f0712-default-rtdb.firebaseio.com"
         };
-
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let timerInterval = null;
-        let currentImpostorName = ""; // ตัวแปรสำหรับเก็บชื่อ Impostor ประจำรอบ
+        const wordBank = {
+            animals: ["สุนัข", "แมว", "ช้าง", "เสือ", "ลิง", "เพนกวิน", "แพนด้า", "จระเข้"],
+            food: ["ส้มตำ", "ชาบู", "พิซซ่า", "ก๋วยเตี๋ยว", "ชานมไข่มุก", "ข้าวผัด", "ไอศกรีม"],
+            places: ["โรงเรียน", "โรงพยาบาล", "ห้างสรรพสินค้า", "สวนสนุก", "สนามบิน", "ชายหาด"]
+        };
 
-        // รายการคู่คำศัพท์
-        const wordPairs = [
-            { wordA: "ย่าง (Grill)", wordB: "นึ่ง (Steam)" },
-            { wordA: "ทอด (Fry)", wordB: "ต้ม (Boil)" },
-            { wordA: "ผัด (Stir-fry)", wordB: "แกง (Curry)" },
-            { wordA: "นม (Milk)", wordB: "น้ำผลไม้ (Juice)" },
-            { wordA: "ร้อน (Hot)", wordB: "เย็น/ปั่น (Cold/Blended)" },
-            { wordA: "เผ็ด (Spicy)", wordB: "หวาน (Sweet)" },
-            { wordA: "เปรี้ยว (Sour)", wordB: "เค็ม (Salty)" },
-            { normal: "ของคาว (Savory)", wordB: "ของหวาน (Dessert)" },
-            { wordA: "จานหลัก (Main)", wordB: "ของกินเล่น (Snack)" }
-        ];
+        let currentImpostorKey = "";
+        let currentSecretWord = "";
+        let currentImpostorName = "";
 
-        // แสดงผลคำตอบ Real-time
-        db.ref('answers').on('value', (snapshot) => {
-            const container = document.getElementById('answers-container');
-            container.innerHTML = ''; 
-            
-            const data = snapshot.val();
-            if(data) {
-                Object.values(data).forEach(player => {
-                    const card = document.createElement('div');
-                    card.className = 'card';
-                    card.id = `card-${player.name}`;
-                    card.innerHTML = `<h3>${player.name}</h3><div class="word">${player.word}</div>`;
-                    container.appendChild(card);
-                });
+        // ฟังข้อมูลผู้เล่นตลอดเวลา
+        db.ref("players").on("value", snapshot => {
+            const players = snapshot.val();
+            const grid = document.getElementById("playersGrid");
+            const countSpan = document.getElementById("playerCount");
+
+            if (!players) {
+                grid.innerHTML = `<div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม...</div>`;
+                countSpan.innerText = "0";
+                return;
             }
+
+            const keys = Object.keys(players);
+            countSpan.innerText = keys.length;
+            grid.innerHTML = "";
+
+            keys.forEach(key => {
+                const p = players[key];
+                let cardClass = "player-card";
+                let roleText = "รอเริ่มเกม...";
+
+                if (p.isRevealed) {
+                    if (p.role === "Impostor") {
+                        cardClass += " impostor";
+                        roleText = "😈 Impostor";
+                    } else if (p.role === "Civilian") {
+                        cardClass += " civilian";
+                        roleText = `😇 Civilian (${p.word})`;
+                    }
+                } else if (p.role) {
+                    roleText = "🎮 กำลังเล่นอยู่...";
+                }
+
+                const ansDisplay = p.answer ? p.answer : "<i style='color:#64748b;'>ยังไม่ส่งคำตอบ</i>";
+
+                const card = document.createElement("div");
+                card.className = cardClass;
+                card.innerHTML = `
+                    <div class="p-name">${p.name}</div>
+                    <div class="p-role">${roleText}</div>
+                    <div class="p-answer"><b>คำตอบ:</b> ${ansDisplay}</div>
+                `;
+                grid.appendChild(card);
+            });
         });
 
-        // สุ่ม Impostor + แจกคำศัพท์
-        function assignRolesAndStart() {
-            db.ref('players').once('value', (snapshot) => {
+        function startGame() {
+            db.ref("players").once("value", snapshot => {
                 const players = snapshot.val();
-                if (!players) return alert('ยังไม่มีผู้เล่นเข้าห้องเลยครับ');
+                if (!players) return alert("ยังไม่มีผู้เล่นเข้าร่วม!");
 
-                const playerKeys = Object.keys(players);
-                if (playerKeys.length < 2) return alert('ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไปครับ');
+                const keys = Object.keys(players);
+                if (keys.length < 2) return alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป");
 
-                // 1. สุ่มคู่คำศัพท์
-                const randomPair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
-                
-                // 2. สุ่มสลับตำแหน่งคำศัพท์
-                const isSwapped = Math.random() < 0.5;
-                const normalWord = isSwapped ? randomPair.wordB : randomPair.wordA;
-                const impostorWord = isSwapped ? randomPair.wordA : randomPair.wordB;
+                const cat = document.getElementById("catSelect").value;
+                const words = wordBank[cat];
+                currentSecretWord = words[Math.floor(Math.random() * words.length)];
 
-                // 3. สุ่มหา Impostor และบันทึกชื่อไว้เฉลย
-                const impostorIndex = Math.floor(Math.random() * playerKeys.length);
-                const impostorKey = playerKeys[impostorIndex];
-                currentImpostorName = players[impostorKey].name;
+                const impostorIndex = Math.floor(Math.random() * keys.length);
+                currentImpostorKey = keys[impostorIndex];
+                currentImpostorName = players[currentImpostorKey].name;
 
-                // 4. แจกจ่ายคำศัพท์
-                playerKeys.forEach((key, index) => {
-                    const assignedWord = (index === impostorIndex) ? impostorWord : normalWord;
-                    db.ref(`players/${key}/assignedWord`).set(assignedWord);
+                keys.forEach(key => {
+                    if (key === currentImpostorKey) {
+                        db.ref("players/" + key).update({ role: "Impostor", word: "", answer: "", isRevealed: false });
+                    } else {
+                        db.ref("players/" + key).update({ role: "Civilian", word: currentSecretWord, answer: "", isRevealed: false });
+                    }
                 });
 
-                startTimer();
+                db.ref("gameState").set({ isRevealed: false, secretWord: "", impostorName: "" });
+                document.getElementById("secretBox").style.display = "none";
+                alert("เริ่มเกมแล้ว! สุ่ม Impostor เรียบร้อย");
             });
         }
 
-        // ฟังก์ชันเฉลย Impostor
-        function revealImpostor() {
-            if (!currentImpostorName) {
-                return alert('ยังไม่ได้เริ่มเกม หรือล้างข้อมูลไปแล้วครับ');
-            }
+        function revealGame() {
+            if (!currentSecretWord) return alert("ยังไม่ได้เริ่มเกม!");
 
-            alert(`🚨 Impostor ประจำรอบนี้คือ: ${currentImpostorName} 🚨`);
-
-            // ไฮไลต์การ์ดคำตอบของผู้เล่นที่เป็น Impostor ให้กลายเป็นสีแดงบนจอทีวี
-            const impostorCard = document.getElementById(`card-${currentImpostorName}`);
-            if (impostorCard) {
-                impostorCard.classList.add('impostor-card');
-                impostorCard.innerHTML += `<div class="impostor-badge">🚨 IMPOSTOR!</div>`;
-            }
-        }
-
-        // เริ่มนับถอยหลัง
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            let timeLeft = 20;
-            const timerElem = document.getElementById('timer');
-            timerElem.style.color = "#f1c40f";
-            timerElem.innerText = timeLeft;
-
-            timerInterval = setInterval(() => {
-                timeLeft--;
-                timerElem.innerText = timeLeft;
-                if (timeLeft <= 0) {
-                    clearInterval(timerInterval);
-                    timerElem.innerText = "หมดเวลา! เริ่มจับผิด";
-                    timerElem.style.color = "#e74c3c";
+            db.ref("players").once("value", snapshot => {
+                const players = snapshot.val();
+                if (players) {
+                    Object.keys(players).forEach(key => {
+                        db.ref("players/" + key).update({ isRevealed: true });
+                    });
                 }
-            }, 1000);
+            });
+
+            db.ref("gameState").set({
+                isRevealed: true,
+                secretWord: currentSecretWord,
+                impostorName: currentImpostorName
+            });
+
+            const secretBox = document.getElementById("secretBox");
+            secretBox.style.display = "block";
+            secretBox.innerHTML = `🎉 เฉลย: คำศัพท์คือ [${currentSecretWord}] | Impostor คือ [${currentImpostorName}]`;
         }
 
-        // ล้างข้อมูลทั้งหมดเพื่อเริ่มรอบใหม่
         function resetGame() {
-            if(confirm('ต้องการเริ่มรอบใหม่ใช่ไหม?')) {
-                db.ref('answers').remove();
-                db.ref('players').remove();
-                if (timerInterval) clearInterval(timerInterval);
+            if (confirm("ต้องการลบผู้เล่นและเริ่มใหม่ทั้งหมดใช่หรือไม่?")) {
+                db.ref("players").remove();
+                db.ref("gameState").remove();
+                document.getElementById("secretBox").style.display = "none";
+                currentSecretWord = "";
                 currentImpostorName = "";
-                document.getElementById('timer').innerText = "20";
-                document.getElementById('timer').style.color = "#f1c40f";
             }
         }
     </script>
