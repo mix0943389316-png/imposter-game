@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>Impostor Game - Host Screen</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; background: #1a1a2e; color: white; padding: 40px; }
+        .timer { font-size: 72px; color: #f1c40f; margin: 10px 0; font-weight: bold; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; margin-top: 30px; }
+        .card { background: #16213e; padding: 20px; border-radius: 12px; border: 2px solid #0f3460; transition: all 0.3s ease; }
+        .word { font-size: 24px; color: #4ecca3; font-weight: bold; margin-top: 10px; }
+        
+        /* สไตล์พิเศษสำหรับย้ำตัว Impostor ตอนเฉลย */
+        .card.impostor-card { background: #900c3f; border: 4px solid #ff5733; transform: scale(1.05); }
+        .impostor-badge { background: #ff5733; color: white; padding: 4px 8px; border-radius: 4px; font-size: 14px; font-weight: bold; display: inline-block; margin-top: 5px; }
+
+        .btn-group { margin-top: 20px; display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        .btn { border: none; padding: 12px 24px; font-size: 18px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .start-btn { background: #2ecc71; color: white; }
+        .start-btn:hover { background: #27ae60; }
+        .reveal-btn { background: #f39c12; color: white; }
+        .reveal-btn:hover { background: #d35400; }
+        .reset-btn { background: #e74c3c; color: white; }
+        .reset-btn:hover { background: #c0392b; }
+    </style>
+</head>
+<body>
+
+    <h1>Who is the Impostor?</h1>
+    <p>หมวดหมู่: <b style="color: #f1c40f;">Food & Drink Categories (Auto-Swap + Reveal)</b></p>
+    <div class="timer" id="timer">20</div>
+    
+    <div class="btn-group">
+        <button class="btn start-btn" onclick="assignRolesAndStart()">🎲 สุ่มบทบาท & เริ่มเวลา</button>
+        <button class="btn reveal-btn" onclick="revealImpostor()">👁️ เฉลย Impostor</button>
+        <button class="btn reset-btn" onclick="resetGame()">🔄 เริ่มรอบใหม่ / รีเซ็ต</button>
+    </div>
+    
+    <div class="grid" id="answers-container"></div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyBO1K6Zc_B2d-NYs56M5SaV8538tpvDJNA",
+            authDomain: "imposter-game-f07f2.firebaseapp.com",
+            databaseURL: "https://imposter-game-f07f2-default-rtdb.firebaseio.com",
+            projectId: "imposter-game-f07f2",
+            storageBucket: "imposter-game-f07f2.firebasestorage.app",
+            messagingSenderId: "313788342489",
+            appId: "1:313788342489:web:587a03eea181cf929a5ec8"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let timerInterval = null;
+        let currentImpostorName = ""; // ตัวแปรสำหรับเก็บชื่อ Impostor ประจำรอบ
+
+        // รายการคู่คำศัพท์
+        const wordPairs = [
+            { wordA: "ย่าง (Grill)", wordB: "นึ่ง (Steam)" },
+            { wordA: "ทอด (Fry)", wordB: "ต้ม (Boil)" },
+            { wordA: "ผัด (Stir-fry)", wordB: "แกง (Curry)" },
+            { wordA: "นม (Milk)", wordB: "น้ำผลไม้ (Juice)" },
+            { wordA: "ร้อน (Hot)", wordB: "เย็น/ปั่น (Cold/Blended)" },
+            { wordA: "เผ็ด (Spicy)", wordB: "หวาน (Sweet)" },
+            { wordA: "เปรี้ยว (Sour)", wordB: "เค็ม (Salty)" },
+            { normal: "ของคาว (Savory)", wordB: "ของหวาน (Dessert)" },
+            { wordA: "จานหลัก (Main)", wordB: "ของกินเล่น (Snack)" }
+        ];
+
+        // แสดงผลคำตอบ Real-time
+        db.ref('answers').on('value', (snapshot) => {
+            const container = document.getElementById('answers-container');
+            container.innerHTML = ''; 
+            
+            const data = snapshot.val();
+            if(data) {
+                Object.values(data).forEach(player => {
+                    const card = document.createElement('div');
+                    card.className = 'card';
+                    card.id = `card-${player.name}`;
+                    card.innerHTML = `<h3>${player.name}</h3><div class="word">${player.word}</div>`;
+                    container.appendChild(card);
+                });
+            }
+        });
+
+        // สุ่ม Impostor + แจกคำศัพท์
+        function assignRolesAndStart() {
+            db.ref('players').once('value', (snapshot) => {
+                const players = snapshot.val();
+                if (!players) return alert('ยังไม่มีผู้เล่นเข้าห้องเลยครับ');
+
+                const playerKeys = Object.keys(players);
+                if (playerKeys.length < 2) return alert('ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไปครับ');
+
+                // 1. สุ่มคู่คำศัพท์
+                const randomPair = wordPairs[Math.floor(Math.random() * wordPairs.length)];
+                
+                // 2. สุ่มสลับตำแหน่งคำศัพท์
+                const isSwapped = Math.random() < 0.5;
+                const normalWord = isSwapped ? randomPair.wordB : randomPair.wordA;
+                const impostorWord = isSwapped ? randomPair.wordA : randomPair.wordB;
+
+                // 3. สุ่มหา Impostor และบันทึกชื่อไว้เฉลย
+                const impostorIndex = Math.floor(Math.random() * playerKeys.length);
+                const impostorKey = playerKeys[impostorIndex];
+                currentImpostorName = players[impostorKey].name;
+
+                // 4. แจกจ่ายคำศัพท์
+                playerKeys.forEach((key, index) => {
+                    const assignedWord = (index === impostorIndex) ? impostorWord : normalWord;
+                    db.ref(`players/${key}/assignedWord`).set(assignedWord);
+                });
+
+                startTimer();
+            });
+        }
+
+        // ฟังก์ชันเฉลย Impostor
+        function revealImpostor() {
+            if (!currentImpostorName) {
+                return alert('ยังไม่ได้เริ่มเกม หรือล้างข้อมูลไปแล้วครับ');
+            }
+
+            alert(`🚨 Impostor ประจำรอบนี้คือ: ${currentImpostorName} 🚨`);
+
+            // ไฮไลต์การ์ดคำตอบของผู้เล่นที่เป็น Impostor ให้กลายเป็นสีแดงบนจอทีวี
+            const impostorCard = document.getElementById(`card-${currentImpostorName}`);
+            if (impostorCard) {
+                impostorCard.classList.add('impostor-card');
+                impostorCard.innerHTML += `<div class="impostor-badge">🚨 IMPOSTOR!</div>`;
+            }
+        }
+
+        // เริ่มนับถอยหลัง
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+            let timeLeft = 20;
+            const timerElem = document.getElementById('timer');
+            timerElem.style.color = "#f1c40f";
+            timerElem.innerText = timeLeft;
+
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElem.innerText = timeLeft;
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    timerElem.innerText = "หมดเวลา! เริ่มจับผิด";
+                    timerElem.style.color = "#e74c3c";
+                }
+            }, 1000);
+        }
+
+        // ล้างข้อมูลทั้งหมดเพื่อเริ่มรอบใหม่
+        function resetGame() {
+            if(confirm('ต้องการเริ่มรอบใหม่ใช่ไหม?')) {
+                db.ref('answers').remove();
+                db.ref('players').remove();
+                if (timerInterval) clearInterval(timerInterval);
+                currentImpostorName = "";
+                document.getElementById('timer').innerText = "20";
+                document.getElementById('timer').style.color = "#f1c40f";
+            }
+        }
+    </script>
+</body>
+</html>
