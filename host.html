@@ -50,12 +50,11 @@
 
     <script>
         const firebaseConfig = {
-            databaseURL: "https://imposter-game-f0712-default-rtdb.firebaseio.com"
+            databaseURL: "https://imposter-game-f07f2-default-rtdb.firebaseio.com"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // คลังคู่ประเภทคำศัพท์ (ภาษาไทย + ภาษาอังกฤษ)
         const foodPairs = [
             { category: "วิธีการปรุง / Cooking Method", wordA: "ย่าง (Grill)", wordB: "นึ่ง (Steam)" },
             { category: "วิธีการปรุง / Cooking Method", wordA: "ทอด (Fry)", wordB: "ต้ม (Boil)" },
@@ -74,7 +73,6 @@
         let currentImpostorKey = "";
         let currentImpostorName = "";
 
-        // ฟังข้อมูลผู้เล่นแบบ Real-time
         db.ref("players").on("value", snapshot => {
             const players = snapshot.val();
             const grid = document.getElementById("playersGrid");
@@ -128,11 +126,9 @@
                 const keys = Object.keys(players);
                 if (keys.length < 2) return alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป / Need at least 2 players");
 
-                // 1. สุ่มคู่คำศัพท์ประเภทอาหาร
                 const randomPair = foodPairs[Math.floor(Math.random() * foodPairs.length)];
                 currentCategory = randomPair.category;
 
-                // 2. สุ่มสลับว่าฝั่งไหนได้ wordA หรือ wordB
                 if (Math.random() < 0.5) {
                     civilianWord = randomPair.wordA;
                     impostorWord = randomPair.wordB;
@@ -141,12 +137,10 @@
                     impostorWord = randomPair.wordA;
                 }
 
-                // 3. สุ่มหาคนที่เป็น Impostor
                 const impostorIndex = Math.floor(Math.random() * keys.length);
                 currentImpostorKey = keys[impostorIndex];
                 currentImpostorName = players[currentImpostorKey].name;
 
-                // 4. บันทึกและแจกจ่ายบทบาท
                 keys.forEach(key => {
                     if (key === currentImpostorKey) {
                         db.ref("players/" + key).update({ 
