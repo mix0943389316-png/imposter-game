@@ -9,10 +9,10 @@
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #0f172a; color: #f8fafc; margin: 0; padding: 30px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .container { width: 100%; max-width: 900px; text-align: center; }
-        h1 { color: #38bdf8; margin-bottom: 10px; }
+        h1 { color: #38bdf8; margin-bottom: 5px; }
+        .subtitle { color: #94a3b8; font-size: 16px; margin-bottom: 20px; }
         .card { background: #1e293b; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 25px; border: 1px solid #334155; }
-        .category-select { font-size: 18px; padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #475569; width: 80%; margin-bottom: 15px; }
-        .btn { border: none; padding: 12px 24px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 5px; transition: all 0.2s; }
+        .btn { border: none; padding: 14px 28px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 5px; transition: all 0.2s; }
         .btn-start { background: #22c55e; color: white; }
         .btn-reveal { background: #eab308; color: black; }
         .btn-reset { background: #ef4444; color: white; }
@@ -23,39 +23,27 @@
         .p-name { font-size: 20px; font-weight: bold; color: #f8fafc; }
         .p-role { font-size: 14px; margin-top: 5px; }
         .p-answer { margin-top: 10px; background: #0f172a; padding: 8px; border-radius: 6px; font-size: 15px; color: #e2e8f0; }
-        .secret-info { background: #0284c7; padding: 15px; border-radius: 10px; margin-top: 15px; font-size: 20px; font-weight: bold; }
+        .secret-info { background: #0284c7; padding: 15px; border-radius: 10px; margin-top: 15px; font-size: 18px; font-weight: bold; text-align: left; line-height: 1.6; }
     </style>
 </head>
 <body>
 
     <div class="container">
         <h1>🎮 Host Dashboard (ผู้ดำเนินเกม)</h1>
+        <div class="subtitle">Main Category: Food & Drink 🍔🥛 (หมวดหมู่อาหารและเครื่องดื่ม)</div>
         
         <div class="card">
-            <label for="catSelect"><b>เลือกประเภทคำศัพท์:</b></label><br>
-            <select id="catSelect" class="category-select">
-                <option value="grill_steam">🔥 ย่าง vs นึ่ง (Grill vs. Steam)</option>
-                <option value="fry_boil">🍳 ทอด vs ต้ม (Fry vs. Boil)</option>
-                <option value="stir_curry">🥘 ผัด vs แกง (Stir-fry vs. Curry)</option>
-                <option value="milk_juice">🥛 นม vs น้ำผลไม้ (Milk vs. Juice)</option>
-                <option value="hot_cold">☕ ร้อน vs เย็น/ปั่น (Hot vs. Cold/Blended)</option>
-                <option value="spicy_sweet">🌶️ เผ็ด vs หวาน (Spicy vs. Sweet)</option>
-                <option value="sour_salty">🍋 เปรี้ยว vs เค็ม (Sour vs. Salty)</option>
-                <option value="savory_dessert">🍗 ของคาว vs ของหวาน (Savory vs. Dessert)</option>
-                <option value="main_snack">🍚 จานหลัก vs ของกินเล่น (Main vs. Snack)</option>
-            </select>
-            <br>
-            <button class="btn btn-start" onclick="startGame()">▶️ สุ่มบทบาท & เริ่มเกม</button>
-            <button class="btn btn-reveal" onclick="revealGame()">🎉 เฉลยผล</button>
-            <button class="btn btn-reset" onclick="resetGame()">🔄 รีเซ็ตเกมทั้งหมด</button>
+            <button class="btn btn-start" onclick="startGame()">🎲 สุ่มคำศัพท์ & เริ่มเกม / Random & Start</button>
+            <button class="btn btn-reveal" onclick="revealGame()">🎉 เฉลยผล / Reveal Result</button>
+            <button class="btn btn-reset" onclick="resetGame()">🔄 รีเซ็ตเกมทั้งหมด / Reset All</button>
             
             <div id="secretBox" class="secret-info" style="display:none;"></div>
         </div>
 
         <div class="card">
-            <h2>👥 รายชื่อผู้เล่น (<span id="playerCount">0</span> คน)</h2>
+            <h2>👥 รายชื่อผู้เล่น / Players (<span id="playerCount">0</span> คน/people)</h2>
             <div id="playersGrid" class="grid">
-                <div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม...</div>
+                <div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม... / No players joined yet...</div>
             </div>
         </div>
     </div>
@@ -67,29 +55,33 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const wordBank = {
-            grill_steam: ["หมูกระทะ", "ไก่ย่าง", "ปลาเผา", "ซี่โครงย่าง", "ขนมจีบ", "ซาลาเปา", "ปลาช่อนนึ่งมะนาว", "ไข่ตุ๋น"],
-            fry_boil: ["ไก่ทอด", "เฟรนช์ฟรายส์", "ปลาทอดน้ำปลา", "ไข่ดาว", "ต้มยำกุ้ง", "ก๋วยเตี๋ยว", "ชาบู", "ต้มจืดเต้าหู้หมูสับ"],
-            stir_curry: ["ผัดกะเพรา", "ผัดไทย", "ผัดซีอิ๊ว", "ข้าวผัด", "แกงเขียวหวาน", "แกงเผ็ด", "มัสมั่น", "พะแนง"],
-            milk_juice: ["นมสด", "ชานมไข่มุก", "นมเย็น", "นมชมพู", "น้ำส้ม", "น้ำแตงโมปั่น", "น้ำมะนาว", "น้ำแอปเปิ้ล"],
-            hot_cold: ["กาแฟร้อน", "ชาร้อน", "ซุปร้อน", "อเมริกาโน่ร้อน", "ชาเย็น", "บิงซู", "น้ำแข็งใส", "สมูทตี้"],
-            spicy_sweet: ["ส้มตำพริก10เม็ด", "ต้มแซ่บ", "ยำมาม่า", "ลาบหมู", "บัวลอย", "เค้กช็อกโกแลต", "ทองหยอด", "บิงซู"],
-            sour_salty: ["ต้มยำมะนาว", "มะม่วงน้ำปลาหวาน", "ยำมะม่วง", "น้ำส้มเกล็ดหิมะ", "ไข่เค็ม", "ปลาเค็ม", "เฟรนช์ฟรายส์โรยเกลือ", "กุ้งแห้ง"],
-            savory_dessert: ["ข้าวมันไก่", "สเต๊กเนื้อ", "ราเมง", "พิซซ่า", "ข้าวเหนียวมะม่วง", "ไอศกรีม", "โรตี", "พุดดิ้ง"],
-            main_snack: ["ข้าวผัดหมู", "สปาเกตตี", "ก๋วยเตี๋ยวเรือ", "สเต๊กหมู", "นักเก็ต", "ป๊อปคอร์น", "เกี๊ยวซ่า", "โปเตโต้ชิป"]
-        };
+        // คลังคู่ประเภทคำศัพท์ (ภาษาไทย + ภาษาอังกฤษ)
+        const foodPairs = [
+            { category: "วิธีการปรุง / Cooking Method", wordA: "ย่าง (Grill)", wordB: "นึ่ง (Steam)" },
+            { category: "วิธีการปรุง / Cooking Method", wordA: "ทอด (Fry)", wordB: "ต้ม (Boil)" },
+            { category: "ประเภทอาหาร / Food Type", wordA: "ผัด (Stir-fry)", wordB: "แกง (Curry)" },
+            { category: "เครื่องดื่ม / Drink Type", wordA: "นม (Milk)", wordB: "น้ำผลไม้ (Juice)" },
+            { category: "อุณหภูมิเครื่องดื่ม / Temperature", wordA: "ร้อน (Hot)", wordB: "เย็น/ปั่น (Cold/Blended)" },
+            { category: "รสชาติ / Flavor Profile", wordA: "เผ็ด (Spicy)", wordB: "หวาน (Sweet)" },
+            { category: "รสชาติ / Flavor Profile", wordA: "เปรี้ยว (Sour)", wordB: "เค็ม (Salty)" },
+            { category: "ชนิดอาหาร / Category", wordA: "ของคาว (Savory)", wordB: "ของหวาน (Dessert)" },
+            { category: "มื้ออาหาร / Meal Type", wordA: "จานหลัก (Main Course)", wordB: "ของกินเล่น (Snack)" }
+        ];
 
+        let currentCategory = "";
+        let civilianWord = "";
+        let impostorWord = "";
         let currentImpostorKey = "";
-        let currentSecretWord = "";
         let currentImpostorName = "";
 
+        // ฟังข้อมูลผู้เล่นแบบ Real-time
         db.ref("players").on("value", snapshot => {
             const players = snapshot.val();
             const grid = document.getElementById("playersGrid");
             const countSpan = document.getElementById("playerCount");
 
             if (!players) {
-                grid.innerHTML = `<div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม...</div>`;
+                grid.innerHTML = `<div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม... / No players joined yet...</div>`;
                 countSpan.innerText = "0";
                 return;
             }
@@ -101,28 +93,28 @@
             keys.forEach(key => {
                 const p = players[key];
                 let cardClass = "player-card";
-                let roleText = "รอเริ่มเกม...";
+                let roleText = "รอเริ่มเกม... / Waiting...";
 
                 if (p.isRevealed) {
                     if (p.role === "Impostor") {
                         cardClass += " impostor";
-                        roleText = "😈 Impostor";
+                        roleText = `😈 Impostor (${p.word})`;
                     } else if (p.role === "Civilian") {
                         cardClass += " civilian";
                         roleText = `😇 Civilian (${p.word})`;
                     }
                 } else if (p.role) {
-                    roleText = "🎮 กำลังเล่นอยู่...";
+                    roleText = "🎮 กำลังเล่นอยู่... / Playing...";
                 }
 
-                const ansDisplay = p.answer ? p.answer : "<i style='color:#64748b;'>ยังไม่ส่งคำตอบ</i>";
+                const ansDisplay = p.answer ? p.answer : "<i style='color:#64748b;'>ยังไม่ส่งคำตอบ / No answer yet</i>";
 
                 const card = document.createElement("div");
                 card.className = cardClass;
                 card.innerHTML = `
                     <div class="p-name">${p.name}</div>
                     <div class="p-role">${roleText}</div>
-                    <div class="p-answer"><b>คำตอบ:</b> ${ansDisplay}</div>
+                    <div class="p-answer"><b>คำตอบ/Answer:</b> ${ansDisplay}</div>
                 `;
                 grid.appendChild(card);
             });
@@ -131,35 +123,56 @@
         function startGame() {
             db.ref("players").once("value", snapshot => {
                 const players = snapshot.val();
-                if (!players) return alert("ยังไม่มีผู้เล่นเข้าร่วม!");
+                if (!players) return alert("ยังไม่มีผู้เล่นเข้าร่วม! / No players joined!");
 
                 const keys = Object.keys(players);
-                if (keys.length < 2) return alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป");
+                if (keys.length < 2) return alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป / Need at least 2 players");
 
-                const cat = document.getElementById("catSelect").value;
-                const words = wordBank[cat];
-                currentSecretWord = words[Math.floor(Math.random() * words.length)];
+                // 1. สุ่มคู่คำศัพท์ประเภทอาหาร
+                const randomPair = foodPairs[Math.floor(Math.random() * foodPairs.length)];
+                currentCategory = randomPair.category;
 
+                // 2. สุ่มสลับว่าฝั่งไหนได้ wordA หรือ wordB
+                if (Math.random() < 0.5) {
+                    civilianWord = randomPair.wordA;
+                    impostorWord = randomPair.wordB;
+                } else {
+                    civilianWord = randomPair.wordB;
+                    impostorWord = randomPair.wordA;
+                }
+
+                // 3. สุ่มหาคนที่เป็น Impostor
                 const impostorIndex = Math.floor(Math.random() * keys.length);
                 currentImpostorKey = keys[impostorIndex];
                 currentImpostorName = players[currentImpostorKey].name;
 
+                // 4. บันทึกและแจกจ่ายบทบาท
                 keys.forEach(key => {
                     if (key === currentImpostorKey) {
-                        db.ref("players/" + key).update({ role: "Impostor", word: "", answer: "", isRevealed: false });
+                        db.ref("players/" + key).update({ 
+                            role: "Impostor", 
+                            word: impostorWord, 
+                            answer: "", 
+                            isRevealed: false 
+                        });
                     } else {
-                        db.ref("players/" + key).update({ role: "Civilian", word: currentSecretWord, answer: "", isRevealed: false });
+                        db.ref("players/" + key).update({ 
+                            role: "Civilian", 
+                            word: civilianWord, 
+                            answer: "", 
+                            isRevealed: false 
+                        });
                     }
                 });
 
                 db.ref("gameState").set({ isRevealed: false, secretWord: "", impostorName: "" });
                 document.getElementById("secretBox").style.display = "none";
-                alert("เริ่มเกมแล้ว! สุ่ม Impostor เรียบร้อย");
+                alert(`เริ่มเกมแล้ว! / Game Started!\nหัวข้อ/Category: [${currentCategory}]`);
             });
         }
 
         function revealGame() {
-            if (!currentSecretWord) return alert("ยังไม่ได้เริ่มเกม!");
+            if (!civilianWord) return alert("ยังไม่ได้เริ่มเกม! / Game has not started yet!");
 
             db.ref("players").once("value", snapshot => {
                 const players = snapshot.val();
@@ -172,21 +185,26 @@
 
             db.ref("gameState").set({
                 isRevealed: true,
-                secretWord: currentSecretWord,
+                secretWord: civilianWord,
                 impostorName: currentImpostorName
             });
 
             const secretBox = document.getElementById("secretBox");
             secretBox.style.display = "block";
-            secretBox.innerHTML = `🎉 เฉลย: คำศัพท์คือ [${currentSecretWord}] | Impostor คือ [${currentImpostorName}]`;
+            secretBox.innerHTML = `
+                📌 <b>หัวข้อ / Category:</b> ${currentCategory}<br>
+                😇 <b>Civilian Word:</b> <span style="color:#2ec573">${civilianWord}</span><br>
+                😈 <b>Impostor:</b> <span style="color:#ff4757">${currentImpostorName}</span> (Impostor Word: ${impostorWord})
+            `;
         }
 
         function resetGame() {
-            if (confirm("ต้องการลบผู้เล่นและเริ่มใหม่ทั้งหมดใช่หรือไม่?")) {
+            if (confirm("ต้องการลบผู้เล่นและเริ่มใหม่ทั้งหมดใช่หรือไม่? / Reset all players?")) {
                 db.ref("players").remove();
                 db.ref("gameState").remove();
                 document.getElementById("secretBox").style.display = "none";
-                currentSecretWord = "";
+                civilianWord = "";
+                impostorWord = "";
                 currentImpostorName = "";
             }
         }
