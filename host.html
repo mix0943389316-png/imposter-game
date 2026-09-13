@@ -11,7 +11,7 @@
         .container { width: 100%; max-width: 900px; text-align: center; }
         h1 { color: #38bdf8; margin-bottom: 10px; }
         .card { background: #1e293b; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 25px; border: 1px solid #334155; }
-        .category-select { font-size: 18px; padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #475569; width: 60%; margin-bottom: 15px; }
+        .category-select { font-size: 18px; padding: 10px; border-radius: 8px; background: #0f172a; color: #fff; border: 1px solid #475569; width: 80%; margin-bottom: 15px; }
         .btn { border: none; padding: 12px 24px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 5px; transition: all 0.2s; }
         .btn-start { background: #22c55e; color: white; }
         .btn-reveal { background: #eab308; color: black; }
@@ -32,11 +32,17 @@
         <h1>🎮 Host Dashboard (ผู้ดำเนินเกม)</h1>
         
         <div class="card">
-            <label for="catSelect"><b>เลือกหมวดหมู่คำศัพท์:</b></label><br>
+            <label for="catSelect"><b>เลือกประเภทคำศัพท์:</b></label><br>
             <select id="catSelect" class="category-select">
-                <option value="animals">🐾 สัตว์เลี้ยง / สัตว์ป่า</option>
-                <option value="food">🍕 อาหาร / เครื่องดื่ม</option>
-                <option value="places">🏫 สถานที่</option>
+                <option value="grill_steam">🔥 ย่าง vs นึ่ง (Grill vs. Steam)</option>
+                <option value="fry_boil">🍳 ทอด vs ต้ม (Fry vs. Boil)</option>
+                <option value="stir_curry">🥘 ผัด vs แกง (Stir-fry vs. Curry)</option>
+                <option value="milk_juice">🥛 นม vs น้ำผลไม้ (Milk vs. Juice)</option>
+                <option value="hot_cold">☕ ร้อน vs เย็น/ปั่น (Hot vs. Cold/Blended)</option>
+                <option value="spicy_sweet">🌶️ เผ็ด vs หวาน (Spicy vs. Sweet)</option>
+                <option value="sour_salty">🍋 เปรี้ยว vs เค็ม (Sour vs. Salty)</option>
+                <option value="savory_dessert">🍗 ของคาว vs ของหวาน (Savory vs. Dessert)</option>
+                <option value="main_snack">🍚 จานหลัก vs ของกินเล่น (Main vs. Snack)</option>
             </select>
             <br>
             <button class="btn btn-start" onclick="startGame()">▶️ สุ่มบทบาท & เริ่มเกม</button>
@@ -62,16 +68,21 @@
         const db = firebase.database();
 
         const wordBank = {
-            animals: ["สุนัข", "แมว", "ช้าง", "เสือ", "ลิง", "เพนกวิน", "แพนด้า", "จระเข้"],
-            food: ["ส้มตำ", "ชาบู", "พิซซ่า", "ก๋วยเตี๋ยว", "ชานมไข่มุก", "ข้าวผัด", "ไอศกรีม"],
-            places: ["โรงเรียน", "โรงพยาบาล", "ห้างสรรพสินค้า", "สวนสนุก", "สนามบิน", "ชายหาด"]
+            grill_steam: ["หมูกระทะ", "ไก่ย่าง", "ปลาเผา", "ซี่โครงย่าง", "ขนมจีบ", "ซาลาเปา", "ปลาช่อนนึ่งมะนาว", "ไข่ตุ๋น"],
+            fry_boil: ["ไก่ทอด", "เฟรนช์ฟรายส์", "ปลาทอดน้ำปลา", "ไข่ดาว", "ต้มยำกุ้ง", "ก๋วยเตี๋ยว", "ชาบู", "ต้มจืดเต้าหู้หมูสับ"],
+            stir_curry: ["ผัดกะเพรา", "ผัดไทย", "ผัดซีอิ๊ว", "ข้าวผัด", "แกงเขียวหวาน", "แกงเผ็ด", "มัสมั่น", "พะแนง"],
+            milk_juice: ["นมสด", "ชานมไข่มุก", "นมเย็น", "นมชมพู", "น้ำส้ม", "น้ำแตงโมปั่น", "น้ำมะนาว", "น้ำแอปเปิ้ล"],
+            hot_cold: ["กาแฟร้อน", "ชาร้อน", "ซุปร้อน", "อเมริกาโน่ร้อน", "ชาเย็น", "บิงซู", "น้ำแข็งใส", "สมูทตี้"],
+            spicy_sweet: ["ส้มตำพริก10เม็ด", "ต้มแซ่บ", "ยำมาม่า", "ลาบหมู", "บัวลอย", "เค้กช็อกโกแลต", "ทองหยอด", "บิงซู"],
+            sour_salty: ["ต้มยำมะนาว", "มะม่วงน้ำปลาหวาน", "ยำมะม่วง", "น้ำส้มเกล็ดหิมะ", "ไข่เค็ม", "ปลาเค็ม", "เฟรนช์ฟรายส์โรยเกลือ", "กุ้งแห้ง"],
+            savory_dessert: ["ข้าวมันไก่", "สเต๊กเนื้อ", "ราเมง", "พิซซ่า", "ข้าวเหนียวมะม่วง", "ไอศกรีม", "โรตี", "พุดดิ้ง"],
+            main_snack: ["ข้าวผัดหมู", "สปาเกตตี", "ก๋วยเตี๋ยวเรือ", "สเต๊กหมู", "นักเก็ต", "ป๊อปคอร์น", "เกี๊ยวซ่า", "โปเตโต้ชิป"]
         };
 
         let currentImpostorKey = "";
         let currentSecretWord = "";
         let currentImpostorName = "";
 
-        // ฟังข้อมูลผู้เล่นตลอดเวลา
         db.ref("players").on("value", snapshot => {
             const players = snapshot.val();
             const grid = document.getElementById("playersGrid");
