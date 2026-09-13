@@ -11,15 +11,15 @@
         .card { background: #1e1e1e; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 15px; box-sizing: border-box; }
         input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 16px; box-sizing: border-box; }
         input { background: #2a2a2a; color: #fff; }
-        button { background: #ff4757; color: white; font-weight: bold; cursor: pointer; }
-        .role-box { background: #2d3436; padding: 15px; border-radius: 8px; margin-top: 10px; border: 2px solid #ff4757; }
+        button { background: #38bdf8; color: white; font-weight: bold; cursor: pointer; }
+        .word-box { background: #0f172a; padding: 15px; border-radius: 8px; margin-top: 10px; border: 2px solid #38bdf8; text-align: center; }
         .word { font-size: 24px; color: #2ed573; font-weight: bold; margin-top: 5px; }
-        .impostor-text { font-size: 20px; color: #ff4757; font-weight: bold; margin-top: 5px; }
         .list-title { font-size: 18px; font-weight: bold; margin-bottom: 10px; color: #eccc68; text-align: left; }
         .player-item { background: #2a2a2a; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
         .player-name { font-weight: bold; color: #70a1ff; }
         .player-answer { color: #ffffff; background: #333; padding: 4px 8px; border-radius: 4px; font-size: 14px; }
-        .no-ans { color: #888; font-style: italic; }
+        .hidden-ans { color: #eab308; font-style: italic; font-size: 13px; }
+        .no-ans { color: #888; font-style: italic; font-size: 13px; }
         .reveal-box { background: #ffa502; color: #000; padding: 15px; border-radius: 8px; font-weight: bold; margin-bottom: 15px; display: none; }
     </style>
 </head>
@@ -27,32 +27,32 @@
 
     <div class="card" id="loginCard">
         <h2>🕵️‍♂️ Who is Impostor?</h2>
-        <input type="text" id="playerName" placeholder="ใส่ชื่อของคุณที่นี่...">
-        <button onclick="joinGame()">เข้าร่วมเกม</button>
+        <input type="text" id="playerName" placeholder="ใส่ชื่อของคุณ / Your Name...">
+        <button onclick="joinGame()">เข้าร่วมเกม / Join Game</button>
     </div>
 
     <div class="card" id="gameCard" style="display: none;">
         <h3 id="welcomeText"></h3>
         
         <div id="revealCard" class="reveal-box">
-            📢 <b>เฉลยเกม!</b><br>
+            📢 <b>เฉลยเกม / Result!</b><br>
             <span id="revealDetail"></span>
         </div>
 
-        <div class="role-box">
-            <div>บทบาทของคุณ:</div>
-            <div id="roleDisplay">รอ Host เริ่มเกม...</div>
+        <div class="word-box">
+            <div>คำศัพท์ของคุณ / Your Word:</div>
+            <div id="wordDisplay" class="word">รอ Host เริ่มเกม...</div>
         </div>
 
         <div id="answerSection" style="margin-top: 20px; display: none;">
-            <label><b>ส่งคำใบ้ของคุณ:</b></label>
+            <label><b>ส่งคำใบ้ของคุณ / Your Clue:</b></label>
             <input type="text" id="myAnswer" placeholder="พิมพ์คำตอบของคุณ...">
-            <button onclick="sendAnswer()" style="background: #2ed573;">ส่งคำตอบ</button>
+            <button onclick="sendAnswer()" style="background: #2ed573;">ส่งคำตอบ / Submit</button>
         </div>
     </div>
 
     <div class="card" id="playersCard" style="display: none;">
-        <div class="list-title">👥 คำตอบของทุกคนในห้อง:</div>
+        <div class="list-title">👥 คำตอบของผู้เล่น / Players' Clues:</div>
         <div id="playersList"></div>
     </div>
 
@@ -97,17 +97,15 @@
                 const data = snapshot.val();
                 if (!data) return;
 
-                const roleDiv = document.getElementById("roleDisplay");
+                const wordDiv = document.getElementById("wordDisplay");
                 const ansSec = document.getElementById("answerSection");
 
-                if (!data.role) {
-                    roleDiv.innerHTML = "<i>รอ Host สุ่มบทบาท...</i>";
+                if (!data.word) {
+                    wordDiv.innerText = "รอ Host เริ่มเกม...";
                     ansSec.style.display = "none";
-                } else if (data.role === "Civilian") {
-                    roleDiv.innerHTML = `คุณคือ <b style="color:#2ed573">Civilian</b><div class="word">คำของคุณคือ: ${data.word}</div>`;
-                    ansSec.style.display = "block";
-                } else if (data.role === "Impostor") {
-                    roleDiv.innerHTML = `คุณคือ <b style="color:#ff4757">Impostor 😈</b><div class="impostor-text">คำของคุณคือ: ${data.word}</div>`;
+                } else {
+                    // แสดงแค่คำศัพท์ ไม่แสดงบทบาท (Civilian/Impostor)
+                    wordDiv.innerText = data.word;
                     ansSec.style.display = "block";
                 }
             });
@@ -122,27 +120,40 @@
         }
 
         function listenToAllPlayers() {
-            db.ref("players").on("value", snapshot => {
-                const players = snapshot.val();
-                const listDiv = document.getElementById("playersList");
-                listDiv.innerHTML = "";
+            db.ref("gameState").on("value", gameSnap => {
+                const gameState = gameSnap.val() || {};
+                
+                db.ref("players").on("value", snapshot => {
+                    const players = snapshot.val();
+                    const listDiv = document.getElementById("playersList");
+                    listDiv.innerHTML = "";
 
-                if (!players) return;
+                    if (!players) return;
 
-                Object.keys(players).forEach(key => {
-                    const p = players[key];
-                    const item = document.createElement("div");
-                    item.className = "player-item";
+                    Object.keys(players).forEach(key => {
+                        const p = players[key];
+                        const item = document.createElement("div");
+                        item.className = "player-item";
 
-                    let roleTag = "";
-                    if (p.isRevealed) {
-                        roleTag = p.role === "Impostor" ? " [Impostor]" : " [Civilian]";
-                    }
+                        let roleTag = "";
+                        if (gameState.isRevealed) {
+                            roleTag = p.role === "Impostor" ? " [Impostor 😈]" : "";
+                        }
 
-                    const ansText = p.answer ? `<span class="player-answer">${p.answer}</span>` : `<span class="no-ans">ยังไม่ส่งคำตอบ</span>`;
+                        let ansText = "";
+                        if (!p.answer) {
+                            ansText = `<span class="no-ans">ยังไม่ส่งคำตอบ</span>`;
+                        } else if (gameState.answersRevealed || gameState.isRevealed) {
+                            // เปิดแสดงคำตอบเมื่อ Host สั่งเปิดคำตอบ หรือ สั่งเฉลยผล
+                            ansText = `<span class="player-answer">${p.answer}</span>`;
+                        } else {
+                            // ซ่อนคำตอบไว้ก่อน
+                            ansText = `<span class="hidden-ans">🔒 ส่งแล้ว (ซ่อนคำตอบ)</span>`;
+                        }
 
-                    item.innerHTML = `<div><span class="player-name">${p.name}</span><small style="color:#ff6b6b">${roleTag}</small></div> ${ansText}`;
-                    listDiv.appendChild(item);
+                        item.innerHTML = `<div><span class="player-name">${p.name}</span><small style="color:#ef4444">${roleTag}</small></div> ${ansText}`;
+                        listDiv.appendChild(item);
+                    });
                 });
             });
         }
@@ -155,7 +166,7 @@
 
                 if (state && state.isRevealed) {
                     revealCard.style.display = "block";
-                    revealDetail.innerHTML = `คำศัพท์คือ: <b>${state.secretWord}</b><br>Impostor คือ: <b style="color:#d63031">${state.impostorName}</b>`;
+                    revealDetail.innerHTML = `📌 หัวข้อ: <b>${state.category}</b><br>😇 คำศัพท์หลัก: <b>${state.secretWord}</b><br>😈 Impostor คือ: <b style="color:#d63031">${state.impostorName}</b>`;
                 } else {
                     revealCard.style.display = "none";
                 }
