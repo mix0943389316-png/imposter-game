@@ -7,8 +7,8 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .card { background: #1e1e1e; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 15px; text-align: center; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121212; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 12px; width: 100%; max-width: 400px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); margin-bottom: 15px; box-sizing: border-box; }
         input, button { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: none; font-size: 16px; box-sizing: border-box; }
         input { background: #2a2a2a; color: #fff; }
         button { background: #ff4757; color: white; font-weight: bold; cursor: pointer; }
@@ -26,90 +26,99 @@
 <body>
 
     <div class="card" id="loginCard">
-        <h2>เข้าสู่เกม Impostor</h2>
+        <h2>🕵️‍♂️ Who is Impostor?</h2>
         <input type="text" id="playerName" placeholder="ใส่ชื่อของคุณที่นี่...">
         <button onclick="joinGame()">เข้าร่วมเกม</button>
     </div>
 
-    <!-- แถบเฉลยเมื่อ Host กดเฉลย -->
-    <div class="card reveal-box" id="revealCard">
-        <div style="font-size: 18px; margin-bottom: 5px;">🎉 เฉลยเกม!</div>
-        <div id="revealDetail"></div>
-    </div>
+    <div class="card" id="gameCard" style="display: none;">
+        <h3 id="welcomeText"></h3>
+        
+        <div id="revealCard" class="reveal-box">
+            📢 <b>เฉลยเกม!</b><br>
+            <span id="revealDetail"></span>
+        </div>
 
-    <div class="card" id="gameCard" style="display:none;">
-        <h3 id="displayName"></h3>
-        <div id="roleSection" class="role-box">
+        <div class="role-box">
             <div>บทบาทของคุณ:</div>
             <div id="roleDisplay">รอ Host เริ่มเกม...</div>
         </div>
-        
-        <div id="answerSection" style="margin-top: 15px; display:none;">
-            <input type="text" id="myAnswer" placeholder="พิมพ์คำใบ้/คำตอบของคุณ...">
-            <button id="sendBtn" onclick="sendAnswer()">ส่งคำตอบ</button>
+
+        <div id="answerSection" style="margin-top: 20px; display: none;">
+            <label><b>ส่งคำใบ้ของคุณ:</b></label>
+            <input type="text" id="myAnswer" placeholder="พิมพ์คำตอบของคุณ...">
+            <button onclick="sendAnswer()" style="background: #2ed573;">ส่งคำตอบ</button>
         </div>
     </div>
 
-    <div class="card" id="boardCard" style="display:none;">
-        <div class="list-title">📋 คำตอบของผู้เล่นทุกคน</div>
-        <div id="playersList">กำลังโหลดข้อมูล...</div>
+    <div class="card" id="playersCard" style="display: none;">
+        <div class="list-title">👥 คำตอบของทุกคนในห้อง:</div>
+        <div id="playersList"></div>
     </div>
 
     <script>
         const firebaseConfig = {
-            databaseURL: "https://imposter-game-f0712-default-rtdb.firebaseio.com"
+            databaseURL: "https://imposter-game-f07f2-default-rtdb.firebaseio.com"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        let myKey = "";
-        let name = "";
+        let myPlayerKey = "";
+        let myName = "";
 
         function joinGame() {
-            name = document.getElementById("playerName").value.trim();
-            if(!name) return alert("กรุณากรอกชื่อ");
+            const nameInput = document.getElementById("playerName").value.trim();
+            if (!nameInput) return alert("กรุณาใส่ชื่อ!");
 
+            myName = nameInput;
             const newRef = db.ref("players").push();
-            myKey = newRef.key;
-            newRef.set({ name: name, role: "", word: "", answer: "" });
+            myPlayerKey = newRef.key;
+
+            newRef.set({
+                name: myName,
+                role: "",
+                word: "",
+                answer: "",
+                isRevealed: false
+            });
 
             document.getElementById("loginCard").style.display = "none";
             document.getElementById("gameCard").style.display = "block";
-            document.getElementById("boardCard").style.display = "block";
-            document.getElementById("displayName").innerText = "สวัสดีคุณ: " + name;
+            document.getElementById("playersCard").style.display = "block";
+            document.getElementById("welcomeText").innerText = "สวัสดี: " + myName;
 
-            listenToMyRole();
+            listenToMyData();
             listenToAllPlayers();
             listenToGameStatus();
         }
 
-        function listenToMyRole() {
-            db.ref("players/" + myKey).on("value", snapshot => {
+        function listenToMyData() {
+            db.ref("players/" + myPlayerKey).on("value", snapshot => {
                 const data = snapshot.val();
-                if(!data) return;
-                
-                const roleDisplay = document.getElementById("roleDisplay");
-                const answerSection = document.getElementById("answerSection");
+                if (!data) return;
 
-                if (data.role === "Impostor") {
-                    roleDisplay.innerHTML = `<span class="impostor-text">😈 คุณคือ Impostor!</span><br><small>(เนียนแกล้งทำเป็นรู้คำศัพท์ไว้)</small>`;
-                    answerSection.style.display = "block";
+                const roleDiv = document.getElementById("roleDisplay");
+                const ansSec = document.getElementById("answerSection");
+
+                if (!data.role) {
+                    roleDiv.innerHTML = "<i>รอ Host สุ่มบทบาท...</i>";
+                    ansSec.style.display = "none";
                 } else if (data.role === "Civilian") {
-                    roleDisplay.innerHTML = `คำศัพท์ของคุณคือ:<br><div class="word">${data.word}</div>`;
-                    answerSection.style.display = "block";
-                } else {
-                    roleDisplay.innerHTML = "รอ Host เริ่มเกม...";
-                    answerSection.style.display = "none";
+                    roleDiv.innerHTML = `คุณคือ <b style="color:#2ed573">Civilian</b><div class="word">คำของคุณคือ: ${data.word}</div>`;
+                    ansSec.style.display = "block";
+                } else if (data.role === "Impostor") {
+                    roleDiv.innerHTML = `คุณคือ <b style="color:#ff4757">Impostor 😈</b><div class="impostor-text">คำของคุณคือ: ${data.word}</div>`;
+                    ansSec.style.display = "block";
                 }
             });
         }
 
         function sendAnswer() {
             const ans = document.getElementById("myAnswer").value.trim();
-            if(!ans) return alert("กรุณากรอกคำตอบ");
+            if (!ans) return alert("กรุณาพิมพ์คำตอบ!");
 
-            db.ref("players/" + myKey).update({ answer: ans });
-            document.getElementById("sendBtn").innerText = "ส่งคำตอบแล้ว (แก้ไขได้)";
+            db.ref("players/" + myPlayerKey).update({ answer: ans });
+            alert("ส่งคำตอบเรียบร้อย!");
         }
 
         function listenToAllPlayers() {
@@ -118,30 +127,26 @@
                 const listDiv = document.getElementById("playersList");
                 listDiv.innerHTML = "";
 
-                if(!players) {
-                    listDiv.innerHTML = "<small style='color:#888;'>ยังไม่มีผู้เล่น</small>";
-                    return;
-                }
+                if (!players) return;
 
                 Object.keys(players).forEach(key => {
                     const p = players[key];
                     const item = document.createElement("div");
                     item.className = "player-item";
-                    
+
                     let roleTag = "";
                     if (p.isRevealed) {
-                        roleTag = p.role === "Impostor" ? " 😈 [Impostor]" : " 😇 [Civilian]";
+                        roleTag = p.role === "Impostor" ? " [Impostor]" : " [Civilian]";
                     }
-                    
+
                     const ansText = p.answer ? `<span class="player-answer">${p.answer}</span>` : `<span class="no-ans">ยังไม่ส่งคำตอบ</span>`;
-                    
+
                     item.innerHTML = `<div><span class="player-name">${p.name}</span><small style="color:#ff6b6b">${roleTag}</small></div> ${ansText}`;
                     listDiv.appendChild(item);
                 });
             });
         }
 
-        // ระบบจับตาดูสถานะการกดเฉลยจาก Host
         function listenToGameStatus() {
             db.ref("gameState").on("value", snapshot => {
                 const state = snapshot.val();
@@ -150,7 +155,7 @@
 
                 if (state && state.isRevealed) {
                     revealCard.style.display = "block";
-                    revealDetail.innerHTML = `คำศัพท์ลับคือ: <b>${state.secretWord}</b><br>Impostor คือ: <b style="color:#d63031;">${state.impostorName}</b>`;
+                    revealDetail.innerHTML = `คำศัพท์คือ: <b>${state.secretWord}</b><br>Impostor คือ: <b style="color:#d63031">${state.impostorName}</b>`;
                 } else {
                     revealCard.style.display = "none";
                 }
