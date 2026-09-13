@@ -12,8 +12,9 @@
         h1 { color: #38bdf8; margin-bottom: 5px; }
         .subtitle { color: #94a3b8; font-size: 16px; margin-bottom: 20px; }
         .card { background: #1e293b; border-radius: 16px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.3); margin-bottom: 25px; border: 1px solid #334155; }
-        .btn { border: none; padding: 14px 28px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 5px; transition: all 0.2s; }
+        .btn { border: none; padding: 14px 24px; font-size: 16px; font-weight: bold; border-radius: 10px; cursor: pointer; margin: 5px; transition: all 0.2s; }
         .btn-start { background: #22c55e; color: white; }
+        .btn-show-ans { background: #0284c7; color: white; }
         .btn-reveal { background: #eab308; color: black; }
         .btn-reset { background: #ef4444; color: white; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; text-align: left; }
@@ -30,20 +31,21 @@
 
     <div class="container">
         <h1>🎮 Host Dashboard (ผู้ดำเนินเกม)</h1>
-        <div class="subtitle">Main Category: Food & Drink 🍔🥛 (หมวดหมู่อาหารและเครื่องดื่ม)</div>
+        <div class="subtitle">Main Category: Food & Drink 🍔🥛</div>
         
         <div class="card">
-            <button class="btn btn-start" onclick="startGame()">🎲 สุ่มคำศัพท์ & เริ่มเกม / Random & Start</button>
-            <button class="btn btn-reveal" onclick="revealGame()">🎉 เฉลยผล / Reveal Result</button>
-            <button class="btn btn-reset" onclick="resetGame()">🔄 รีเซ็ตเกมทั้งหมด / Reset All</button>
+            <button class="btn btn-start" onclick="startGame()">🎲 1. สุ่มคำศัพท์ & เริ่มเกม</button>
+            <button class="btn btn-show-ans" onclick="revealAnswers()">📢 2. เปิดแสดงคำตอบทุกคน</button>
+            <button class="btn btn-reveal" onclick="revealGame()">🎉 3. เฉลยผลลัพธ์ (Impostor)</button>
+            <button class="btn btn-reset" onclick="resetGame()">🔄 รีเซ็ตเกมทั้งหมด</button>
             
             <div id="secretBox" class="secret-info" style="display:none;"></div>
         </div>
 
         <div class="card">
-            <h2>👥 รายชื่อผู้เล่น / Players (<span id="playerCount">0</span> คน/people)</h2>
+            <h2>👥 รายชื่อผู้เล่น / Players (<span id="playerCount">0</span> คน)</h2>
             <div id="playersGrid" class="grid">
-                <div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม... / No players joined yet...</div>
+                <div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม...</div>
             </div>
         </div>
     </div>
@@ -79,7 +81,7 @@
             const countSpan = document.getElementById("playerCount");
 
             if (!players) {
-                grid.innerHTML = `<div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม... / No players joined yet...</div>`;
+                grid.innerHTML = `<div style="color:#94a3b8; grid-column: 1/-1;">ยังไม่มีผู้เล่นเข้าร่วม...</div>`;
                 countSpan.innerText = "0";
                 return;
             }
@@ -91,7 +93,7 @@
             keys.forEach(key => {
                 const p = players[key];
                 let cardClass = "player-card";
-                let roleText = "รอเริ่มเกม... / Waiting...";
+                let roleText = "รอเริ่มเกม...";
 
                 if (p.isRevealed) {
                     if (p.role === "Impostor") {
@@ -102,17 +104,17 @@
                         roleText = `😇 Civilian (${p.word})`;
                     }
                 } else if (p.role) {
-                    roleText = "🎮 กำลังเล่นอยู่... / Playing...";
+                    roleText = "🎮 กำลังเล่นอยู่...";
                 }
 
-                const ansDisplay = p.answer ? p.answer : "<i style='color:#64748b;'>ยังไม่ส่งคำตอบ / No answer yet</i>";
+                const ansDisplay = p.answer ? p.answer : "<i style='color:#64748b;'>ยังไม่ส่งคำตอบ</i>";
 
                 const card = document.createElement("div");
                 card.className = cardClass;
                 card.innerHTML = `
                     <div class="p-name">${p.name}</div>
                     <div class="p-role">${roleText}</div>
-                    <div class="p-answer"><b>คำตอบ/Answer:</b> ${ansDisplay}</div>
+                    <div class="p-answer"><b>คำตอบ:</b> ${ansDisplay}</div>
                 `;
                 grid.appendChild(card);
             });
@@ -121,10 +123,10 @@
         function startGame() {
             db.ref("players").once("value", snapshot => {
                 const players = snapshot.val();
-                if (!players) return alert("ยังไม่มีผู้เล่นเข้าร่วม! / No players joined!");
+                if (!players) return alert("ยังไม่มีผู้เล่นเข้าร่วม!");
 
                 const keys = Object.keys(players);
-                if (keys.length < 2) return alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป / Need at least 2 players");
+                if (keys.length < 2) return alert("ต้องมีผู้เล่นอย่างน้อย 2 คนขึ้นไป");
 
                 const randomPair = foodPairs[Math.floor(Math.random() * foodPairs.length)];
                 currentCategory = randomPair.category;
@@ -159,14 +161,20 @@
                     }
                 });
 
-                db.ref("gameState").set({ isRevealed: false, secretWord: "", impostorName: "" });
+                db.ref("gameState").set({ isRevealed: false, answersRevealed: false, secretWord: "", impostorName: "", category: currentCategory });
                 document.getElementById("secretBox").style.display = "none";
-                alert(`เริ่มเกมแล้ว! / Game Started!\nหัวข้อ/Category: [${currentCategory}]`);
+                alert(`เริ่มเกมแล้ว!\nหมวดหมู่: [${currentCategory}]`);
             });
         }
 
+        function revealAnswers() {
+            if (!civilianWord) return alert("ยังไม่ได้เริ่มเกม!");
+            db.ref("gameState").update({ answersRevealed: true });
+            alert("เปิดแสดงคำตอบทุกคนบนหน้าจอแล้ว!");
+        }
+
         function revealGame() {
-            if (!civilianWord) return alert("ยังไม่ได้เริ่มเกม! / Game has not started yet!");
+            if (!civilianWord) return alert("ยังไม่ได้เริ่มเกม!");
 
             db.ref("players").once("value", snapshot => {
                 const players = snapshot.val();
@@ -177,10 +185,11 @@
                 }
             });
 
-            db.ref("gameState").set({
+            db.ref("gameState").update({
                 isRevealed: true,
                 secretWord: civilianWord,
-                impostorName: currentImpostorName
+                impostorName: currentImpostorName,
+                category: currentCategory
             });
 
             const secretBox = document.getElementById("secretBox");
@@ -188,12 +197,12 @@
             secretBox.innerHTML = `
                 📌 <b>หัวข้อ / Category:</b> ${currentCategory}<br>
                 😇 <b>Civilian Word:</b> <span style="color:#2ec573">${civilianWord}</span><br>
-                😈 <b>Impostor:</b> <span style="color:#ff4757">${currentImpostorName}</span> (Impostor Word: ${impostorWord})
+                😈 <b>Impostor:</b> <span style="color:#ff4757">${currentImpostorName}</span> (คำสับหลอก: ${impostorWord})
             `;
         }
 
         function resetGame() {
-            if (confirm("ต้องการลบผู้เล่นและเริ่มใหม่ทั้งหมดใช่หรือไม่? / Reset all players?")) {
+            if (confirm("ต้องการลบผู้เล่นและเริ่มใหม่ทั้งหมดใช่หรือไม่?")) {
                 db.ref("players").remove();
                 db.ref("gameState").remove();
                 document.getElementById("secretBox").style.display = "none";
